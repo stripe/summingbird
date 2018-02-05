@@ -29,7 +29,7 @@ val novocodeJunitVersion = "0.10"
 val scalaCheckVersion = "1.12.2"
 val scalatestVersion = "2.2.4"
 //val scaldingVersion = "0.16.0-RC3"
-val scaldingVersion = "0.18.0-M1-stripe-cascading3"
+val scaldingVersion = "0.18.0-M2-stripe-cascading3"
 val slf4jVersion = "1.6.6"
 val storehausVersion = "0.13.0"
 val stormDep = "storm" % "storm" % "0.9.0-wip15" //This project also compiles with the latest storm, which is in fact required to run the example
@@ -68,7 +68,8 @@ val sharedSettings = extraSettings ++ Seq(
     "Clojars Repository" at "http://clojars.org/repo",
     "Conjars Repository" at "http://conjars.org/repo",
     "Twitter Maven" at "http://maven.twttr.com"
-  ),
+  ) ++ sys.props.get("snapshots.url").map("-D snapshots.url" at _).toSeq
+    ++ sys.props.get("releases.url").map("-D releases.url" at _).toSeq,
 
   parallelExecution in Test := true,
 
@@ -101,15 +102,13 @@ val sharedSettings = extraSettings ++ Seq(
     ReleaseStep(action = Command.process("sonatypeReleaseAll", _)),
     pushChanges),
 
-  publishTo <<= version { v =>
-    Some(
-      if (v.trim.toUpperCase.endsWith("SNAPSHOT"))
-        Opts.resolver.sonatypeSnapshots
-      else
-        Opts.resolver.sonatypeStaging
-        //"twttr" at "http://artifactory.local.twitter.com/libs-releases-local"
-    )
-  },
+  publishTo := Some(
+      if (version.value.trim.endsWith("SNAPSHOT")) {
+        sys.props.get("snapshots.url").map("snapshots" at _).getOrElse(Opts.resolver.sonatypeSnapshots)
+      } else {
+        sys.props.get("releases.url").map("releases" at _).getOrElse(Opts.resolver.sonatypeStaging)
+      }
+    ),
 
   pomExtra := (
     <url>https://github.com/twitter/summingbird</url>
