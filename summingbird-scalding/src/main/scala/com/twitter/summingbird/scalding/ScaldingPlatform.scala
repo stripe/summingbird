@@ -285,7 +285,7 @@ object Scalding {
         default
       case Some((id, opt)) =>
         logger.info(
-          s"Producer (${producer.getClass.getName}) Using $opt found via NamedProducer ${'"'}$id${'"'}")
+          s"""Producer (${producer.getClass.getName}) Using $opt found via NamedProducer "$id" """)
         opt
     }
 
@@ -299,8 +299,6 @@ object Scalding {
     dependants: Dependants[Scalding],
     built: Map[Producer[Scalding, _], PipeFactory[_]],
     forceFanOut: Boolean = false): (PipeFactory[T], Map[Producer[Scalding, _], PipeFactory[_]]) = {
-
-    val names = dependants.namesOf(producer).map(_.id)
 
     def recurse[U](p: Producer[Scalding, U],
       built: Map[Producer[Scalding, _], PipeFactory[_]] = built,
@@ -337,6 +335,9 @@ object Scalding {
     built.get(producer) match {
       case Some(pf) => (pf.asInstanceOf[PipeFactory[T]], built)
       case None =>
+        // make sure not to compute names unless we need them because it
+        // is somewhat expensive especially for large graphs
+        lazy val names = dependants.namesOf(producer).map(_.id)
         val (pf, m) = producer match {
           case Source(src) => {
             val shards = getOrElse(options, names, producer, FlatMapShards.default).count
