@@ -66,7 +66,7 @@ val sharedSettings = extraSettings ++ Seq(
     "Clojars Repository" at "http://clojars.org/repo",
     "Conjars Repository" at "http://conjars.org/repo",
     "Twitter Maven" at "https://maven.twttr.com"
-  ),
+  ) ++ sys.props.get("releases.url").map("stripe nexus" at _).toList,
 
   parallelExecution in Test := true,
 
